@@ -2,7 +2,8 @@ import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import { LazyBrush } from 'lazy-brush';
 import { Catenary } from 'catenary-curve';
-
+import Canvas from 'react-native-canvas';
+import { View } from 'react-native';
 import ResizeObserver from 'resize-observer-polyfill';
 
 import drawImage from './drawImage';
@@ -15,7 +16,7 @@ function midPointBtw(p1, p2) {
 }
 
 const canvasStyle = {
-  display: 'block',
+  // display: 'block',
   position: 'absolute',
 };
 
@@ -114,7 +115,7 @@ export default class extends PureComponent {
     this.drawImage();
     this.loop();
 
-    window.setTimeout(() => {
+    setTimeout(() => {
       const initX = window.innerWidth / 2;
       const initY = window.innerHeight / 2;
       this.lazy.update(
@@ -256,6 +257,7 @@ export default class extends PureComponent {
 
   handleTouchStart = (e) => {
     const { x, y } = this.getPointerPos(e);
+    console.log('handleTouchStart', x, y);
     this.lazy.update({ x, y }, { both: true });
     this.handleMouseDown(e);
 
@@ -275,25 +277,26 @@ export default class extends PureComponent {
     this.mouseHasMoved = true;
   };
 
-  handleMouseDown = (e) => {
-    e.preventDefault();
-    this.isPressing = true;
-  };
+    handleMouseDown = (e) => {
+      e.preventDefault();
+      this.isPressing = true;
+    };
 
-  handleMouseMove = (e) => {
-    const { x, y } = this.getPointerPos(e);
-    this.handlePointerMove(x, y);
-  };
+    handleMouseMove = (e) => {
+      const { x, y } = this.getPointerPos(e);
+      this.handlePointerMove(x, y);
+    };
 
-  handleMouseUp = (e) => {
-    e.preventDefault();
-    this.isDrawing = false;
-    this.isPressing = false;
+    handleMouseUp = (e) => {
+      e.preventDefault();
+      this.isDrawing = false;
+      this.isPressing = false;
 
-    this.saveLine();
-  };
+      this.saveLine();
+    };
 
   handleCanvasResize = (entries, observer) => {
+    console.log('aaaa');
     const saveData = this.getSaveData();
     for (const entry of entries) {
       const { width, height } = entry.contentRect;
@@ -316,23 +319,29 @@ export default class extends PureComponent {
   };
 
   getPointerPos = (e) => {
-    const rect = this.canvas.interface.getBoundingClientRect();
+    // const rect = this.canvas.interface.getBoundingClientRect();
 
-    // use cursor pos as default
-    let clientX = e.clientX;
-    let clientY = e.clientY;
+    // return touch position inside canvas
+    return {
+      x: e.nativeEvent.locationX,
+      y: e.nativeEvent.locationY,
+    };
 
-    // use first touch if available
-    if (e.changedTouches && e.changedTouches.length > 0) {
-      clientX = e.changedTouches[0].clientX;
-      clientY = e.changedTouches[0].clientY;
-    }
+    // // use cursor pos as default
+    // let clientX = e.clientX;
+    // let clientY = e.clientY;
+
+    // // use first touch if available
+    // if (e.changedTouches && e.changedTouches.length > 0) {
+    //   clientX = e.changedTouches[0].clientX;
+    //   clientY = e.changedTouches[0].clientY;
+    // }
 
     // return mouse/touch position inside canvas
-    return {
-      x: clientX - rect.left,
-      y: clientY - rect.top,
-    };
+    // return {
+    //   x: clientX - rect.left,
+    //   y: clientY - rect.top,
+    // };
   };
 
   handlePointerMove = (x, y) => {
@@ -526,11 +535,10 @@ export default class extends PureComponent {
 
   render() {
     return (
-      <div
-        className={this.props.className}
+      <View
         style={{
-          display: 'block',
-          background: this.props.backgroundColor,
+          // display: 'block',
+          backgroundColor: this.props.backgroundColor,
           touchAction: 'none',
           width: this.props.canvasWidth,
           height: this.props.canvasHeight,
@@ -541,11 +549,16 @@ export default class extends PureComponent {
             this.canvasContainer = container;
           }
         }}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderGrant={this.handleTouchStart}
+        onResponderMove={this.handleTouchMove}
+        onResponderRelease={this.handleTouchEnd}
       >
         {canvasTypes.map(({ name, zIndex }) => {
           const isInterface = name === 'interface';
           return (
-            <canvas
+            <Canvas
               key={name}
               ref={(canvas) => {
                 if (canvas) {
@@ -554,18 +567,25 @@ export default class extends PureComponent {
                 }
               }}
               style={{ ...canvasStyle, zIndex }}
-              onMouseDown={isInterface ? this.handleMouseDown : undefined}
-              onMouseMove={isInterface ? this.handleMouseMove : undefined}
-              onMouseUp={isInterface ? this.handleMouseUp : undefined}
-              onMouseOut={isInterface ? this.handleMouseUp : undefined}
-              onTouchStart={isInterface ? this.handleTouchStart : undefined}
-              onTouchMove={isInterface ? this.handleTouchMove : undefined}
-              onTouchEnd={isInterface ? this.handleTouchEnd : undefined}
-              onTouchCancel={isInterface ? this.handleTouchEnd : undefined}
+              width={this.props.canvasWidth}
+              height={this.props.canvasHeight}
+              // onMouseDown={isInterface ? this.handleMouseDown : undefined}
+              // onMouseMove={isInterface ? this.handleMouseMove : undefined}
+              // onMouseUp={isInterface ? this.handleMouseUp : undefined}
+              // onMouseOut={isInterface ? this.handleMouseUp : undefined}
+              // onTouchStart={isInterface ? this.handleTouchStart : undefined}
+              // onTouchMove={isInterface ? this.handleTouchMove : undefined}
+              // onTouchEnd={isInterface ? this.handleTouchEnd : undefined}
+              // onTouchCancel={isInterface ? this.handleTouchEnd : undefined}
+              // onStartShouldSetResponder={() => isInterface}
+              // onMoveShouldSetResponder={() => isInterface}
+              // onResponderGrant={this.handleTouchStart}
+              // onResponderMove={this.handleTouchMove}
+              // onResponderRelease={this.handleTouchEnd}
             />
           );
         })}
-      </div>
+      </View>
     );
   }
 }
